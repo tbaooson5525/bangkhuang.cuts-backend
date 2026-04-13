@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  DONE
+}
+
+// ─── Models ───────────────────────────────────────────────────────
+
+model Admin {
+  id       Int    @id @default(autoincrement())
+  email    String @unique @db.VarChar(255)
+  password String @db.VarChar(255)
+
+  @@map("admins")
+}
+
+model Staff {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  avatarUrl   String?   @db.VarChar(500)
+  isActive    Boolean   @default(true)
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+
+  appointments Appointment[]
+
+  @@map("staffs")
+}
+
+model Service {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  price       Int
+  isActive    Boolean   @default(true)
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+
+  appointmentServices AppointmentService[]
+
+  @@map("services")
+}
+
+model Appointment {
+  id               Int               @id @default(autoincrement())
+  customerName     String            @db.VarChar(255)
+  phone            String            @db.VarChar(20)
+  staffId          Int
+  appointmentStart DateTime
+  status           AppointmentStatus @default(PENDING)
+  comment          String?           @db.Text
+  isDeleted        Boolean           @default(false)
+  deletedAt        DateTime?
+
+  staff               Staff                @relation(fields: [staffId], references: [id])
+  appointmentServices AppointmentService[]
+
+  @@map("appointments")
+}
+
+model AppointmentService {
+  appointmentId Int
+  serviceId     Int
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  service     Service     @relation(fields: [serviceId], references: [id])
+
+  @@id([appointmentId, serviceId])
+  @@map("appointment_services")
+}
+
+// ─── Business Configuration ───────────────────────────────────────
+
+model BusinessHours {
+  singleton    String @id @default("singleton")
+  openTime     String @db.VarChar(5)
+  closeTime    String @db.VarChar(5)
+  slotDuration Int
+
+  @@map("business_hours")
+}
+
+// 0 = CN, 1 = T2, 2 = T3, 3 = T4, 4 = T5, 5 = T6, 6 = T7
+model WorkingDay {
+  dayOfWeek Int @unique
+
+  @@map("working_days")
+}
+
+model DayOff {
+  date   DateTime @unique @db.Date
+  reason String?  @db.VarChar(255)
+
+  @@map("days_off")
+}
+
+// ─── Photo Gallery ───────────────────────────────────────
+model GalleryTheme {
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(100)
+  slug     String  @unique @db.VarChar(100)
+  order    Int     @default(0)
+  isActive Boolean @default(true)
+
+  images GalleryImage[]
+
+  @@map("gallery_themes")
+}
+
+model GalleryImage {
+  id        Int     @id @default(autoincrement())
+  themeId   Int
+  publicId  String  @db.VarChar(255)
+  order     Int     @default(0)
+  isActive  Boolean @default(true)
+
+  theme GalleryTheme @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@map("gallery_images")
+}
