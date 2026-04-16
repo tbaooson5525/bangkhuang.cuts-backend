@@ -29,7 +29,7 @@ export class AuthController {
       res.cookie('token', token, {
         httpOnly: true,
         maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
       });
       return res.json({ message: 'Login successful' });
@@ -44,7 +44,7 @@ export class AuthController {
   @HttpCode(200)
   logout(@Res() res: Response) {
     res.clearCookie('token', {
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
     return res.json({ message: 'Logged out' });
